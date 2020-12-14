@@ -87,7 +87,7 @@
         // dla orbit
         var marker, spline;
         var matrix = new THREE.Matrix4();
-        var up = new THREE.Vector3(0, 1, 0);
+        var up = new THREE.Vector3();
         var axis = new THREE.Vector3();
 
         // zmienne orbit planet
@@ -181,7 +181,7 @@
 
         // orbitcontroller
         var controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.minDistance = 10;
+        controls.minDistance = 20;
         controls.maxDistance = 500;
 
         // tło wszechświata
@@ -466,6 +466,7 @@
         document.addEventListener('mousedown', onDocumentMouseDown, false);
         document.addEventListener('touchstart', onDocumentTouchStart, false);
         document.addEventListener('click', onDocumentClick, false);
+        document.addEventListener('contextmenu', onDocumentClick, false);
 
 
 
@@ -479,6 +480,7 @@
 
         //****************************** WYBÓR PLANETY ************************
         function onDocumentClick(event) {
+            console.log("click")
             var checkPlanet = false;
             var rect = renderer.domElement.getBoundingClientRect();
             mouse.x = ((event.clientX - rect.left) / (rect.width - rect.left)) * 2 - 1;
@@ -629,8 +631,8 @@
                 // aktualne położenie planety
                 var pt = mercpath.getPoint(mt);
                 var tangent = mercpath.getTangent(mt).normalize();
-                mercury.position.set(pt.x, pt.y, pt.z);
-                mercuryCollision.position.set(pt.x, pt.y, pt.z);
+                mercury.position.set(pt.x, pt.y-0.2, pt.z);
+                mercuryCollision.position.set(pt.x, pt.y-0.2, pt.z);
 
                 // ustawienie odpowiedniej osi obrotu (calculate the axis to rotate around) 
                 axis.crossVectors(up, tangent).normalize();
@@ -646,8 +648,8 @@
                 venus.rotation.y += 0.04;
                 var pt = venpath.getPoint(vet);
                 var tangent = venpath.getTangent(vet).normalize();
-                venus.position.set(pt.x, pt.y, pt.z);
-                venusCollision.position.set(pt.x, pt.y, pt.z);
+                venus.position.set(pt.x, pt.y-0.4, pt.z);
+                venusCollision.position.set(pt.x, pt.y-0.4, pt.z);
                 axis.crossVectors(up, tangent).normalize();
                 var radians = Math.acos(up.dot(tangent));
                 vet = (vet >= 1) ? 0 : vet += 0.001 / controlConfig.revolveSpeed;
@@ -657,8 +659,8 @@
                 earth.rotation.y += 0.02;
                 var pt = earthpath.getPoint(eat);
                 var tangent = earthpath.getTangent(eat).normalize();
-                earth.position.set(pt.x, pt.y, pt.z);
-                earthCollision.position.set(pt.x, pt.y, pt.z);
+                earth.position.set(pt.x, pt.y-0.45, pt.z);
+                earthCollision.position.set(pt.x, pt.y-0.45, pt.z);
                 axis.crossVectors(up, tangent).normalize();
                 var radians = Math.acos(up.dot(tangent));
                 eat = (eat >= 1) ? 0 : eat += 0.0003 / controlConfig.revolveSpeed;
@@ -668,8 +670,8 @@
                 mars.rotation.y += 0.02;
                 var pt = marspath.getPoint(mat);
                 var tangent = marspath.getTangent(mat);
-                mars.position.set(pt.x, pt.y, pt.z);
-                marsCollision.position.set(pt.x, pt.y, pt.z);
+                mars.position.set(pt.x, pt.y-0.3, pt.z);
+                marsCollision.position.set(pt.x, pt.y-0.3, pt.z);
                 axis.crossVectors(up, tangent).normalize();
                 var radians = Math.acos(up.dot(tangent));
                 mat = (mat >= 1) ? 0 : mat += 0.0001 / controlConfig.revolveSpeed;
@@ -679,8 +681,8 @@
                 jupiter.rotation.y += 0.004;
                 var pt = juppath.getPoint(jupt);
                 var tangent = juppath.getTangent(jupt).normalize();
-                jupiter.position.set(pt.x, pt.y, pt.z);
-                jupiterCollision.position.set(pt.x, pt.y, pt.z);
+                jupiter.position.set(pt.x, pt.y-1.9, pt.z);
+                jupiterCollision.position.set(pt.x, pt.y-1.9, pt.z);
                 axis.crossVectors(up, tangent).normalize();
                 var radians = Math.acos(up.dot(tangent));
                 jupt = (jupt >= 1) ? 0 : jupt += 0.00006 / controlConfig.revolveSpeed;
@@ -690,8 +692,8 @@
                 saturn.rotation.y += 0.009;
                 var pt = satpath.getPoint(satt);
                 var tangent = satpath.getTangent(satt).normalize();
-                saturn.position.set(pt.x, pt.y, pt.z);
-                saturnCollision.position.set(pt.x, pt.y, pt.z);
+                saturn.position.set(pt.x, pt.y-0.6, pt.z);
+                saturnCollision.position.set(pt.x, pt.y-0.6, pt.z);
                 axis.crossVectors(up, tangent).normalize();
                 var radians = Math.acos(up.dot(tangent));
                 satt = (satt >= 1) ? 0 : satt += 0.00003 / controlConfig.revolveSpeed;
@@ -701,8 +703,8 @@
                 uranus.rotation.y += 0.0004;
                 var pt = urapath.getPoint(urat);
                 var tangent = urapath.getTangent(urat).normalize();
-                uranus.position.set(pt.x, pt.y, pt.z);
-                uranCollision.position.set(pt.x, pt.y, pt.z);
+                uranus.position.set(pt.x, pt.y-0.5, pt.z);
+                uranCollision.position.set(pt.x, pt.y-0.5, pt.z);
                 axis.crossVectors(up, tangent).normalize();
                 var radians = Math.acos(up.dot(tangent));
                 urat = (urat >= 1) ? 0 : urat += 0.000009 / controlConfig.revolveSpeed;
@@ -712,8 +714,8 @@
                 neptune.rotation.y += 0.0004;
                 var pt = neppath.getPoint(nept);
                 var tangent = neppath.getTangent(nept).normalize();
-                neptune.position.set(pt.x, pt.y, pt.z);
-                neptunCollision.position.set(pt.x, pt.y, pt.z);
+                neptune.position.set(pt.x, pt.y-0.3, pt.z);
+                neptunCollision.position.set(pt.x, pt.y-0.3, pt.z);
                 axis.crossVectors(up, tangent).normalize();
                 var radians = Math.acos(up.dot(tangent));
                 nept = (nept >= 1) ? 0 : nept += 0.0000009 / controlConfig.revolveSpeed;
@@ -735,56 +737,48 @@
                     camera.position.set(x + 13, y + 1, z + 15);
                     camera.lookAt(x, y, z);
                     setDirectionalLight(x + 13, y + 1, z + 15);
-                    console.log('looking at mercury');
                     break;
                 case SelectedPlanet.VENUS:
                     var { x, y, z } = venpath.getPoint(vet);
                     camera.position.set(x + 13, y + 1, z + 15);
                     camera.lookAt(x, y, z);
                     setDirectionalLight(x + 13, y + 1, z + 15);
-                    console.log('looking at venus');
                     break;
                 case SelectedPlanet.EARTH:
                     var { x, y, z } = earthpath.getPoint(eat);
                     camera.position.set(x + 13, y + 1, z + 15);
                     setDirectionalLight(x + 13, y + 1, z + 15);
                     camera.lookAt(x, y, z);
-                    console.log('looking at earth');
                     break;
                 case SelectedPlanet.MARS:
                     var { x, y, z } = marspath.getPoint(mat);
                     camera.position.set(x + 13, y + 1, z + 15);
                     setDirectionalLight(x + 13, y + 1, z + 15);
                     camera.lookAt(x, y, z);
-                    console.log('looking at mars');
                     break;
                 case SelectedPlanet.JUPITER:
                     var { x, y, z } = juppath.getPoint(jupt);
                     camera.position.set(x + 13, y + 1, z + 15);
                     setDirectionalLight(x + 13, y + 1, z + 15);
                     camera.lookAt(x, y, z);
-                    console.log('looking at jupiter');
                     break;
                 case SelectedPlanet.SATURN:
                     var { x, y, z } = satpath.getPoint(satt);
                     camera.position.set(x + 13, y + 1, z + 15);
                     setDirectionalLight(x + 13, y + 1, z + 15);
                     camera.lookAt(x, y, z);
-                    console.log('looking at saturn');
                     break;
                 case SelectedPlanet.URAN:
                     var { x, y, z } = urapath.getPoint(urat);
                     camera.position.set(x + 13, y + 1, z + 15);
                     setDirectionalLight(x + 13, y + 1, z + 15);
                     camera.lookAt(x, y, z);
-                    console.log('looking at uran');
                     break;
                 case SelectedPlanet.NEPTUN:
                     var { x, y, z } = neppath.getPoint(nept);
                     camera.position.set(x + 13, y + 1, z + 15);
                     setDirectionalLight(x + 13, y + 1, z + 15);
                     camera.lookAt(x, y, z);
-                    console.log('looking at neptun');
                     break;
             }
         }
