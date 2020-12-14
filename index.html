@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Solar System</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link type="text/css" rel="stylesheet" href="css/owl.carousel.css" />
+    <link type="text/css" rel="stylesheet" href="css/owl.theme.default.css" />
+    <link type="text/css" rel="stylesheet" href="css/style.css" />
+    <style>
+        body{margin: 0;width: 100%; height: 100% }
+        canvas { width: 100%; height: 100% }
+        #planetInfo{
+            position: absolute;
+			bottom: 10px;
+            right:10px;
+            height: 250px;
+            width: 220px;
+            background-color: rgb(24, 21, 21);
+            border: 3px solid rgb(24, 21, 21);
+            font-family:Monospace;
+			font-size:13px;
+            color: #ffffff;
+            opacity: 0.9;
+        }   
+
+        #title{
+            text-align: center;
+            font-weight: bold;
+            font-size:16px;
+
+        }        
+
+        #info {
+				position: absolute;
+				top: 0px;
+				width: 100%;
+				color: #ffffff;
+				padding: 5px;
+				font-family:Monospace;
+				font-size:13px;
+				text-align:right;
+			}
+    </style>
+    <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/owl.carousel.min.js"></script>
+    <script type="text/javascript" src="js/jquery.magnific-popup.js"></script>
+    <script type="text/javascript" src="js/main.js"></script>
+    <script src="js/three.min.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/GLTFLoader.js"></script>
+    <script src="js/stats.min.js"></script>
+    <script src="js/CSS2DRenderer.js"></script>
+    <script src="js/libs/dat.gui.min.js"></script>
+
+</head>
+
+<body>
+    <div id="info"></div>
+    <div id="planetInfo">
+        <div id = "title">Ziemia</div>
+        <hr>
+        <span id ="content">Licząc od Słońca, pierwsza planeta Układu Słonecznego. Pod względem wielkości w Układzie Słonecznym zajmuje ósme miejsce. 
+        Na powierzchni Merkurego występują liczne i głębokie kratery. Planeta nie posiada atmosfery, a temperatura waha się na niej od -180°C do 430°C.
+        </span>
+
+    </div>
+    <script>
+
+
+
+        //********************* ŁADOWANIE SCENY ******************************
+        var scene = new THREE.Scene();
+        scene2 = new THREE.Scene();
+        var Stats;
+        var innerw, height;
+        var stars = [];
+        var guic, controlConfig = {
+            freezState: false,
+            revolveSpeed: 24
+        };
+
+
+
+        //********************* USTAWIENIA ******************************
+        // dla orbit
+        var marker, spline;
+        var matrix = new THREE.Matrix4();
+        var up = new THREE.Vector3(0, 1, 0);
+        var axis = new THREE.Vector3();
+
+        // zmienne orbit planet
+        var mercpath, venpath, earthpath, marspath, juppath, satpath, urapath, neppath;
+
+        // kolizja planet (potrzebne do event-u kliknięcia myszki)
+        var sunCollision, mercuryCollision, venusCollision, earthCollision, marsCollision, jupiterCollision, saturnCollision, uranCollision, neptunCollision;
+
+        const SelectedPlanet = {
+            SUN: 0,
+            MERCURY: 1,
+            VENUS: 2,
+            EARTH: 3,
+            MARS: 4,
+            JUPITER: 5,
+            SATURN: 6,
+            URAN: 7,
+            NEPTUN: 8
+        };
+
+        var planetInfo = document.getElementById("planetInfo"); 
+        var title = document.getElementById("title"); 
+        var content = document.getElementById("content"); 
+        planetInfo.hidden = true;
+
+        let planetDetails = new Map([
+            ['sun', `Słońce to gwiazda centralna Układu Słonecznego. Wokół Słońca krąży Ziemia, pozostałe planety, oraz inne ciała niebieskie. Średnica Słońca jest 109 razy większa, niż średnica Ziemi.
+                        Temperatura powierzchni Słońca wynosi 5530°C. Natomiast temperatura jądra sięga 14 mln°C.`],
+            ['mercury', `Licząc od Słońca, pierwsza planeta Układu Słonecznego. Pod względem wielkości w Układzie Słonecznym zajmuje ósme miejsce. 
+                          Na powierzchni Merkurego występują liczne i głębokie kratery. Planeta nie posiada atmosfery, a temperatura waha się na niej od -180°C do 430°C.`],
+            ['venus', `Licząc od Słońca, druga planeta Układu Słonecznego. Atmosfera Wenus składa się głównie z dwutlenku węgla (96,5 %).
+                        Temperatura na powierzchni globu oscyluje w granicach od 400°C do 500°C. Tak wysoka temperatura jest spowodowana przez efekt cieplarniany.`],
+            ['earth', `Licząc od Słońca, trzecia planeta Układu Słonecznego. W przeciwieństwie do innych planet na Ziemi rozwinęło się inteligentne życie.
+                    71 % powierzchni Ziemi zajmuje woda. Ziemia jest jedyną planetą w Układzie Słonecznym, na której woda powszechnie występuje w stanie ciekłym.`],
+            ['mars', `Licząc od Słońca, czwarta planeta Układu Słonecznego. Atmosfera Marsa jest bardzo cienka i rozrzedzona.
+                      Średnia temperatura na czerwonej planecie wynosi od –120°C do 22°C. Mars znany jest w Układzie Słonecznym z najwyższych łańcuchów górskich oraz największych kanionów.`],
+            ['jupiter', `Licząc od Słońca, piąta planeta Układu Słonecznego. Jest planetą gazową oraz posiada wiele księżyców (co najmniej 63 - najwiecej w Układzie Słonecznym).
+                        Jowisz jest najszybciej obracającą się planetą w Układzie, co powoduje duże spłaszczenie planety na biegunach.`],
+            ['saturn', `Licząc od Słońca, szósta planeta Układu Słonecznego. Jest planetą gazową. Charakterystyczną cechą Saturna jest ułożenie wokół planety ponad 10000 oddzielnych pierścieni.
+                        Imponuje także ilością księżyców - dotychczas odkryto prawie 60.`],
+            ['uran', `Licząc od Słońca, siódma planeta Układu Słonecznego. Przez to, że nachylenie płaszczyzny równika Urana do płaszczyzny jego orbity wynosi 98°, planeta wiruje wokół własnej osi ruchem wstecznym.
+                      Zielonkawy kolor zawdzięcza chmurom metanu w górnych warstwach atmosfery.`],
+            ['neptun', `Licząc od Słońca, ósma planeta Układu Słonecznego. Jest to najdalej od Słońca krążącą gazowa planeta w Układzie Słonecznym. 
+                        Z powodu dużego oddalenia od Słońca Neptun otrzymuje bardzo mało ciepła. Temperatura zewnętrznych warstw atmosfery wynosi –218°C.`]
+
+        ]);
+        let followedPlanet = null;
+        let camX;
+        let camY;
+        let camZ;
+
+        let directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+
+        var planobj = [];
+        var pathobj = [];
+        var planetCollisions = [];
+        var mt = vet = eat = mat = jupt = satt = urat = nept = 0;
+
+        // clasa Elipsa
+        function Ellipse(xRadius, yRadius) {
+            THREE.Curve.call(this);
+            this.xRadius = xRadius;
+            this.yRadius = yRadius;
+        }
+
+        Ellipse.prototype = Object.create(THREE.Curve.prototype);
+        Ellipse.prototype.constructor = Ellipse;
+
+        Ellipse.prototype.getPoint = function (t) {
+            var radians = 2 * Math.PI * t;
+            return new THREE.Vector3(this.xRadius * Math.cos(radians), 0,
+                this.yRadius * Math.sin(radians));
+        };
+
+        // ustawienie kamery
+        var camera = new THREE.PerspectiveCamera(25, window.innerWidth / window.innerHeight, 1, 20000);
+        camera.position.set(10, 30, 100);
+
+        // RayCaster 
+        raycaster = new THREE.Raycaster();
+        mouse = new THREE.Vector2();
+
+        // renderowanie
+        var renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setClearColor(0x000000);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        innerw = window.innerWidth;
+        height = window.innerHeight;
+        document.body.appendChild(renderer.domElement);
+
+        // orbitcontroller
+        var controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.minDistance = 10;
+        controls.maxDistance = 500;
+
+        // tło wszechświata
+        var bgTexture = new THREE.TextureLoader().load("model/universe3.png");
+        bgTexture.minFilter = THREE.LinearFilter;
+        scene.background = bgTexture;
+
+
+
+        //************************* SWIATŁO I SŁOŃCE ***********************************
+        function getPointLight(intensity, color) {
+            var light = new THREE.PointLight(color, intensity);
+            light.castShadow = true;
+
+            light.shadow.bias = 0.001;
+            light.shadow.mapSize.width = 2048;
+            light.shadow.mapSize.height = 2048;
+            return light;
+        }
+
+        pointLight = getPointLight(2.5, "rgb(255, 220, 180)");
+        scene.add(pointLight);
+
+        function setDirectionalLight(x, y, z) {
+            scene.remove(directionalLight);
+            directionalLight.position.set(x, y, z);
+            scene.add(directionalLight);
+        }
+
+        function getMaterial(type, color, myTexture) {
+            var materialOptions = {
+                color: color === undefined ? 'rgb(255, 255, 255)' : color,
+                map: myTexture === undefined ? null : myTexture
+            };
+
+            switch (type) {
+                case 'basic':
+                    return new THREE.MeshBasicMaterial(materialOptions);
+                case 'lambert':
+                    return new THREE.MeshLambertMaterial(materialOptions);
+                case 'phong':
+                    return new THREE.MeshPhongMaterial(materialOptions);
+                case 'standard':
+                    return new THREE.MeshStandardMaterial(materialOptions);
+                default:
+                    return new THREE.MeshBasicMaterial(materialOptions);
+            }
+        }
+
+        function getSphere(material, size, segments) {
+            var geometry = new THREE.SphereGeometry(size, segments, segments);
+            var obj = new THREE.Mesh(geometry, material);
+            obj.castShadow = true;
+
+            return obj;
+        }
+
+        // słońce
+        var sunMaterial = getMaterial("basic", "rgb(255,255,255)");
+        sun = getSphere(sunMaterial, 4, 48);
+        sunCollision = new THREE.Mesh(
+            new THREE.BoxGeometry(4.5, 4.5, 4.5),
+            new THREE.MeshPhongMaterial({ color: 0, opacity: 0, transparent: true })
+        );
+        planetCollisions.push(sunCollision);
+        scene.add(sunCollision);
+        scene.add(sun);
+
+
+        var spriteMaterial = new THREE.SpriteMaterial(
+            {
+                map: new THREE.ImageUtils.loadTexture("model/glow.png")
+                , useScreenCoordinates: false
+                , color: 0xffffee
+                , transparent: true
+                , blending: THREE.AdditiveBlending
+            });
+        var sprite = new THREE.Sprite(spriteMaterial);
+        sprite.scale.set(18, 18, 1.0);
+        sun.add(sprite);
+
+
+
+        //**************************** ORBITY *************************************
+        var pathSegments = 128;
+        var tubeRadius = 0.005;
+        var radiusSegments = 3;
+        var closed = true;
+
+        var material = new THREE.MeshPhongMaterial({
+            color: 'white',
+        });
+
+        // orbita Merkurego
+        mercpath = new Ellipse(15, 10);
+        var mercgeometry = new THREE.TubeBufferGeometry(mercpath, pathSegments, tubeRadius, radiusSegments, closed);
+        mesh = new THREE.Mesh(mercgeometry, material);
+        scene.add(mesh);
+        pathobj.push(mesh);
+
+        // orbita Wenus
+        venpath = new Ellipse(22, 15);
+        var venusgeometry = new THREE.TubeBufferGeometry(venpath, pathSegments, tubeRadius, radiusSegments, closed);
+        mesh = new THREE.Mesh(venusgeometry, material);
+        scene.add(mesh);
+        pathobj.push(mesh);
+
+        // orbita Ziemii
+        earthpath = new Ellipse(28, 22);
+        var earthgeometry = new THREE.TubeBufferGeometry(earthpath, pathSegments, tubeRadius, radiusSegments, closed);
+        mesh = new THREE.Mesh(earthgeometry, material);
+        scene.add(mesh);
+        pathobj.push(mesh);
+
+        // orbita Marsa
+        marspath = new Ellipse(35, 28);
+        var marsgeometry = new THREE.TubeBufferGeometry(marspath, pathSegments, tubeRadius, radiusSegments, closed);
+        mesh = new THREE.Mesh(marsgeometry, material);
+        scene.add(mesh);
+        pathobj.push(mesh);
+
+        // orbita Jowisza
+        juppath = new Ellipse(46, 34);
+        var jupgeometry = new THREE.TubeBufferGeometry(juppath, pathSegments, tubeRadius, radiusSegments, closed);
+        mesh = new THREE.Mesh(jupgeometry, material);
+        scene.add(mesh);
+        pathobj.push(mesh);
+
+        // orbita Saturna
+        satpath = new Ellipse(57, 42);
+        var satgeometry = new THREE.TubeBufferGeometry(satpath, pathSegments, tubeRadius, radiusSegments, closed);
+        mesh = new THREE.Mesh(satgeometry, material);
+        scene.add(mesh);
+        pathobj.push(mesh);
+
+        // orbita Uranu
+        urapath = new Ellipse(69, 49);
+        var urageometry = new THREE.TubeBufferGeometry(urapath, pathSegments, tubeRadius, radiusSegments, closed);
+        mesh = new THREE.Mesh(urageometry, material);
+        scene.add(mesh);
+        pathobj.push(mesh);
+
+        // orbita Neptuna
+        neppath = new Ellipse(79, 59);
+        var nepgeometry = new THREE.TubeBufferGeometry(neppath, pathSegments, tubeRadius, radiusSegments, closed);
+        mesh = new THREE.Mesh(nepgeometry, material);
+        scene.add(mesh);
+        pathobj.push(mesh);
+
+
+
+        //******************************** PLANETY ************************************
+        var loader = new THREE.GLTFLoader();
+        var sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune;
+
+        loader.load('model/mercury/mercury.gltf', function (gltf) {
+            mercury = gltf.scene;
+            gltf.scene.scale.set(1, 1, 1);
+            var pt = mercpath.getPoint(mt);
+            mercuryCollision = new THREE.Mesh(
+                new THREE.BoxGeometry(1.5, 0.85, 2),
+                new THREE.ShadowMaterial({ visible: false })
+            );
+            planetCollisions.push(mercuryCollision);
+            gltf.scene.position.set(pt.x, pt.y, pt.z);
+            scene.add(mercuryCollision);
+            scene.add(gltf.scene);
+            planobj.push(mercury);
+        });
+
+        loader.load('model/venus/venus.gltf', function (gltf) {
+            venus = gltf.scene;
+            gltf.scene.scale.set(1.8, 1.8, 1.8);
+            var pt = venpath.getPoint(vet);
+            venusCollision = new THREE.Mesh(
+                new THREE.BoxGeometry(1.5, 0.85, 1.5),
+                new THREE.ShadowMaterial({ visible: false })
+            );
+            planetCollisions.push(venusCollision);
+            gltf.scene.position.set(pt.x, pt.y, pt.z);
+            scene.add(venusCollision);
+            scene.add(gltf.scene);
+            planobj.push(venus);
+        });
+
+        loader.load('model/earth/earth.gltf', function (gltf) {
+            earth = gltf.scene;
+            gltf.scene.scale.set(2, 2, 2);
+            var pt = earthpath.getPoint(eat);
+            earthCollision = new THREE.Mesh(
+                new THREE.BoxGeometry(1, 2, 1),
+                new THREE.ShadowMaterial({ visible: false })
+            );
+            planetCollisions.push(earthCollision);
+            scene.add(earthCollision);
+            gltf.scene.position.set(pt.x, pt.y, pt.z);
+            scene.add(gltf.scene);
+            planobj.push(earth);
+        });
+
+
+        loader.load('model/mars/mars.gltf', function (gltf) {
+            mars = gltf.scene;
+            gltf.scene.scale.set(1.3, 1.3, 1.3);
+            var pt = marspath.getPoint(mat);
+            marsCollision = new THREE.Mesh(
+                new THREE.BoxGeometry(1, 2, 1.5),
+                new THREE.ShadowMaterial({ visible: false })
+            );
+            planetCollisions.push(marsCollision);
+            gltf.scene.position.set(pt.x, pt.y, pt.z);
+            scene.add(marsCollision);
+            scene.add(gltf.scene);
+            planobj.push(mars);
+        });
+
+        loader.load('model/jupiter/jupiter.gltf', function (gltf) {
+            jupiter = gltf.scene;
+            gltf.scene.scale.set(8, 8, 8);
+            var pt = juppath.getPoint(jupt);
+            jupiterCollision = new THREE.Mesh(
+                new THREE.BoxGeometry(6, 4, 6),
+                new THREE.ShadowMaterial({ visible: false })
+            );
+            planetCollisions.push(jupiterCollision);
+            gltf.scene.position.set(pt.x, pt.y, pt.z);
+            scene.add(gltf.scene);
+            scene.add(jupiterCollision);
+            planobj.push(jupiter);
+        });
+
+
+        loader.load('model/saturn/saturn.gltf', function (gltf) {
+            saturn = gltf.scene;
+            gltf.scene.scale.set(7, 7, 7);
+            var pt = satpath.getPoint(satt);
+            saturnCollision = new THREE.Mesh(
+                new THREE.BoxGeometry(3, 3, 3),
+                new THREE.ShadowMaterial({ visible: false })
+            );
+            planetCollisions.push(saturnCollision);
+            gltf.scene.position.set(pt.x, pt.y, pt.z);
+            scene.add(saturnCollision);
+            scene.add(gltf.scene);
+            planobj.push(saturn);
+        });
+
+        loader.load('model/uranus/uranus.gltf', function (gltf) {
+            uranus = gltf.scene;
+            gltf.scene.scale.set(3, 3, 3);
+            var pt = urapath.getPoint(urat);
+            uranCollision = new THREE.Mesh(
+                new THREE.BoxGeometry(1, 2, 1),
+                new THREE.ShadowMaterial({ visible: false })
+            );
+            planetCollisions.push(uranCollision);
+            gltf.scene.position.set(pt.x, pt.y, pt.z);
+            scene.add(uranCollision);
+            scene.add(gltf.scene);
+            planobj.push(uranus);
+        });
+
+        loader.load('model/neptune/neptune.gltf', function (gltf) {
+            neptune = gltf.scene;
+            gltf.scene.scale.set(3, 3, 3);
+            var pt = neppath.getPoint(nept);
+            neptunCollision = new THREE.Mesh(
+                new THREE.BoxGeometry(1, 2, 3),
+                new THREE.ShadowMaterial({ visible: false })
+            );
+            planetCollisions.push(neptunCollision);
+            gltf.scene.position.set(pt.x, pt.y, pt.z);
+            scene.add(neptunCollision);
+            scene.add(gltf.scene);
+            planobj.push(neptune);
+        });
+
+
+
+        //********************** NASŁUCHIWANIE ZDARZEŃ ************************
+        window.addEventListener('resize', onWindowResize, false);
+        document.addEventListener('mousedown', onDocumentMouseDown, false);
+        document.addEventListener('touchstart', onDocumentTouchStart, false);
+        document.addEventListener('click', onDocumentClick, false);
+
+
+
+        //******************************* MENU ********************************
+        guic = new dat.GUI({ width: 350 });
+        var controlGUI = guic.addFolder("Controls");
+        controlGUI.add(controlConfig, 'freezState')
+        controlGUI.add(controlConfig, 'revolveSpeed', 1, 24).onChange(function () { });
+
+
+
+        //****************************** WYBÓR PLANETY ************************
+        function onDocumentClick(event) {
+            var checkPlanet = false;
+            var rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / (rect.width - rect.left)) * 2 - 1;
+            mouse.y = - ((event.clientY - rect.top) / (rect.bottom - rect.top)) * 2 + 1;
+            let intersects;
+
+
+            intersects = raycaster.intersectObjects([sunCollision]);
+            if (intersects.length > 0) {
+                followedPlanet = SelectedPlanet.SUN;
+                camera.position.set(10, 20, 40);
+                camera.lookAt(0, 0, 0);
+                planetInfo.hidden = false;
+                title.innerHTML = "Słońce"; 
+                content.innerHTML = planetDetails.get('sun'); 
+                checkPlanet = true;
+            }
+
+            intersects = raycaster.intersectObjects([mercuryCollision]);
+            if (intersects.length > 0) {
+                followedPlanet = SelectedPlanet.MERCURY;
+                planetInfo.hidden = false;
+                title.innerHTML = "Merkury"; 
+                content.innerHTML = planetDetails.get('mercury'); 
+                checkPlanet = true;
+            }
+
+            intersects = raycaster.intersectObjects([venusCollision]);
+            if (intersects.length > 0) {
+                followedPlanet = SelectedPlanet.VENUS;
+                planetInfo.hidden = false;
+                title.innerHTML = "Wenus"; 
+                content.innerHTML = planetDetails.get('venus'); 
+                checkPlanet = true;
+            }
+
+            intersects = raycaster.intersectObjects([earthCollision]);
+            if (intersects.length > 0) {
+                followedPlanet = SelectedPlanet.EARTH;
+                planetInfo.hidden = false;
+                title.innerHTML = "Ziemia"; 
+                content.innerHTML = planetDetails.get('earth'); 
+                checkPlanet = true;
+            }
+
+            intersects = raycaster.intersectObjects([marsCollision]);
+            if (intersects.length > 0) {
+                followedPlanet = SelectedPlanet.MARS;
+                planetInfo.hidden = false;
+                title.innerHTML = "Mars"; 
+                content.innerHTML = planetDetails.get('mars'); 
+                checkPlanet = true;
+            }
+
+            intersects = raycaster.intersectObjects([jupiterCollision]);
+            if (intersects.length > 0) {
+                followedPlanet = SelectedPlanet.JUPITER;
+                planetInfo.hidden = false;
+                title.innerHTML = "Jowisz"; 
+                content.innerHTML = planetDetails.get('jupiter'); 
+                checkPlanet = true;
+            }
+
+            intersects = raycaster.intersectObjects([saturnCollision]);
+            if (intersects.length > 0) {
+                followedPlanet = SelectedPlanet.SATURN;
+                planetInfo.hidden = false;
+                title.innerHTML = "Saturn"; 
+                content.innerHTML = planetDetails.get('saturn'); 
+                checkPlanet = true;
+            }
+
+            intersects = raycaster.intersectObjects([uranCollision]);
+            if (intersects.length > 0) {
+                followedPlanet = SelectedPlanet.URAN;
+                planetInfo.hidden = false;
+                title.innerHTML = "Uran"; 
+                content.innerHTML = planetDetails.get('uran'); 
+                checkPlanet = true;
+            }
+
+            intersects = raycaster.intersectObjects([neptunCollision]);
+            if (intersects.length > 0) {
+                followedPlanet = SelectedPlanet.NEPTUN;
+                planetInfo.hidden = false;
+                title.innerHTML = "Neptun"; 
+                content.innerHTML = planetDetails.get('neptun'); 
+                checkPlanet = true;
+            }
+
+            if(!checkPlanet){
+                planetInfo.hidden = true;
+            }
+        }
+
+        function onWindowResize(event) {
+            followedPlanet = null;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onDocumentTouchStart(event) {
+
+            followedPlanet = null;
+            event.preventDefault();
+            event.clientX = event.touches[0].clientX;
+            event.clientY = event.touches[0].clientY;
+            onDocumentMouseDown(event);
+        }
+
+        function onDocumentMouseDown(event) {
+
+            event.preventDefault();
+            followedPlanet = null;
+            mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
+            mouse.y = - (event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            var intersects = raycaster.intersectObjects(pathobj);
+
+            if (intersects.length > 0) {
+                var pt = intersects[0].getPoint(mt);
+            }
+        }
+
+
+
+        //********************** ANIMACJA CAŁEGO UKŁADU WRAZ Z MENU **********************
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+
+            if (!controlConfig.freezState)
+                revolvePlanet();
+        }
+
+
+
+        //****************************** RUCH PLANET *********************************
+        function revolvePlanet() {
+
+            if (mercury) {
+                // aktualna rotacja planety
+                mercury.rotation.y += 0.05;
+
+                // aktualne położenie planety
+                var pt = mercpath.getPoint(mt);
+                var tangent = mercpath.getTangent(mt).normalize();
+                mercury.position.set(pt.x, pt.y, pt.z);
+                mercuryCollision.position.set(pt.x, pt.y, pt.z);
+
+                // ustawienie odpowiedniej osi obrotu (calculate the axis to rotate around) 
+                axis.crossVectors(up, tangent).normalize();
+
+                // generowanie odpowiedniego kąta do obrotu (calcluate the angle between the up vector and the tangent)
+                var radians = Math.acos(up.dot(tangent));
+
+                // aktualizacja danych do generowania kolejnej pozycji
+                mt = (mt >= 1) ? 0 : mt += (0.005 / controlConfig.revolveSpeed);
+            }
+
+            if (venus) {
+                venus.rotation.y += 0.04;
+                var pt = venpath.getPoint(vet);
+                var tangent = venpath.getTangent(vet).normalize();
+                venus.position.set(pt.x, pt.y, pt.z);
+                venusCollision.position.set(pt.x, pt.y, pt.z);
+                axis.crossVectors(up, tangent).normalize();
+                var radians = Math.acos(up.dot(tangent));
+                vet = (vet >= 1) ? 0 : vet += 0.001 / controlConfig.revolveSpeed;
+            }
+
+            if (earth) {
+                earth.rotation.y += 0.02;
+                var pt = earthpath.getPoint(eat);
+                var tangent = earthpath.getTangent(eat).normalize();
+                earth.position.set(pt.x, pt.y, pt.z);
+                earthCollision.position.set(pt.x, pt.y, pt.z);
+                axis.crossVectors(up, tangent).normalize();
+                var radians = Math.acos(up.dot(tangent));
+                eat = (eat >= 1) ? 0 : eat += 0.0003 / controlConfig.revolveSpeed;
+            }
+
+            if (mars) {
+                mars.rotation.y += 0.02;
+                var pt = marspath.getPoint(mat);
+                var tangent = marspath.getTangent(mat);
+                mars.position.set(pt.x, pt.y, pt.z);
+                marsCollision.position.set(pt.x, pt.y, pt.z);
+                axis.crossVectors(up, tangent).normalize();
+                var radians = Math.acos(up.dot(tangent));
+                mat = (mat >= 1) ? 0 : mat += 0.0001 / controlConfig.revolveSpeed;
+            }
+
+            if (jupiter) {
+                jupiter.rotation.y += 0.004;
+                var pt = juppath.getPoint(jupt);
+                var tangent = juppath.getTangent(jupt).normalize();
+                jupiter.position.set(pt.x, pt.y, pt.z);
+                jupiterCollision.position.set(pt.x, pt.y, pt.z);
+                axis.crossVectors(up, tangent).normalize();
+                var radians = Math.acos(up.dot(tangent));
+                jupt = (jupt >= 1) ? 0 : jupt += 0.00006 / controlConfig.revolveSpeed;
+            }
+
+            if (saturn) {
+                saturn.rotation.y += 0.009;
+                var pt = satpath.getPoint(satt);
+                var tangent = satpath.getTangent(satt).normalize();
+                saturn.position.set(pt.x, pt.y, pt.z);
+                saturnCollision.position.set(pt.x, pt.y, pt.z);
+                axis.crossVectors(up, tangent).normalize();
+                var radians = Math.acos(up.dot(tangent));
+                satt = (satt >= 1) ? 0 : satt += 0.00003 / controlConfig.revolveSpeed;
+            }
+
+            if (uranus) {
+                uranus.rotation.y += 0.0004;
+                var pt = urapath.getPoint(urat);
+                var tangent = urapath.getTangent(urat).normalize();
+                uranus.position.set(pt.x, pt.y, pt.z);
+                uranCollision.position.set(pt.x, pt.y, pt.z);
+                axis.crossVectors(up, tangent).normalize();
+                var radians = Math.acos(up.dot(tangent));
+                urat = (urat >= 1) ? 0 : urat += 0.000009 / controlConfig.revolveSpeed;
+            }
+
+            if (neptune) {
+                neptune.rotation.y += 0.0004;
+                var pt = neppath.getPoint(nept);
+                var tangent = neppath.getTangent(nept).normalize();
+                neptune.position.set(pt.x, pt.y, pt.z);
+                neptunCollision.position.set(pt.x, pt.y, pt.z);
+                axis.crossVectors(up, tangent).normalize();
+                var radians = Math.acos(up.dot(tangent));
+                nept = (nept >= 1) ? 0 : nept += 0.0000009 / controlConfig.revolveSpeed;
+            }
+
+
+
+            // ************ AKTUALIZACJA POZYCJI KAMERY I ŚWIATŁA PODCZAS WYBORU PLAMETY *************
+            let p;
+
+            if (!followedPlanet || followedPlanet === SelectedPlanet.SUN) {
+                scene.remove(directionalLight);
+                return;
+            }
+           
+            switch (followedPlanet) {
+                case SelectedPlanet.MERCURY:
+                    var { x, y, z } = mercpath.getPoint(mt);
+                    camera.position.set(x + 13, y + 1, z + 15);
+                    camera.lookAt(x, y, z);
+                    setDirectionalLight(x + 13, y + 1, z + 15);
+                    console.log('looking at mercury');
+                    break;
+                case SelectedPlanet.VENUS:
+                    var { x, y, z } = venpath.getPoint(vet);
+                    camera.position.set(x + 13, y + 1, z + 15);
+                    camera.lookAt(x, y, z);
+                    setDirectionalLight(x + 13, y + 1, z + 15);
+                    console.log('looking at venus');
+                    break;
+                case SelectedPlanet.EARTH:
+                    var { x, y, z } = earthpath.getPoint(eat);
+                    camera.position.set(x + 13, y + 1, z + 15);
+                    setDirectionalLight(x + 13, y + 1, z + 15);
+                    camera.lookAt(x, y, z);
+                    console.log('looking at earth');
+                    break;
+                case SelectedPlanet.MARS:
+                    var { x, y, z } = marspath.getPoint(mat);
+                    camera.position.set(x + 13, y + 1, z + 15);
+                    setDirectionalLight(x + 13, y + 1, z + 15);
+                    camera.lookAt(x, y, z);
+                    console.log('looking at mars');
+                    break;
+                case SelectedPlanet.JUPITER:
+                    var { x, y, z } = juppath.getPoint(jupt);
+                    camera.position.set(x + 13, y + 1, z + 15);
+                    setDirectionalLight(x + 13, y + 1, z + 15);
+                    camera.lookAt(x, y, z);
+                    console.log('looking at jupiter');
+                    break;
+                case SelectedPlanet.SATURN:
+                    var { x, y, z } = satpath.getPoint(satt);
+                    camera.position.set(x + 13, y + 1, z + 15);
+                    setDirectionalLight(x + 13, y + 1, z + 15);
+                    camera.lookAt(x, y, z);
+                    console.log('looking at saturn');
+                    break;
+                case SelectedPlanet.URAN:
+                    var { x, y, z } = urapath.getPoint(urat);
+                    camera.position.set(x + 13, y + 1, z + 15);
+                    setDirectionalLight(x + 13, y + 1, z + 15);
+                    camera.lookAt(x, y, z);
+                    console.log('looking at uran');
+                    break;
+                case SelectedPlanet.NEPTUN:
+                    var { x, y, z } = neppath.getPoint(nept);
+                    camera.position.set(x + 13, y + 1, z + 15);
+                    setDirectionalLight(x + 13, y + 1, z + 15);
+                    camera.lookAt(x, y, z);
+                    console.log('looking at neptun');
+                    break;
+            }
+        }
+        animate();
+
+    </script>
+</body>
+
+</html>
