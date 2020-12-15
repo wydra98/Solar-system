@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Solar System</title>
+    <title>Układ słoneczny - PGK</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <link type="text/css" rel="stylesheet" href="css/owl.carousel.css" />
@@ -77,9 +77,10 @@
         var innerw, height;
         var stars = [];
         var guic, controlConfig = {
-            freezState: false,
-            revolveSpeed: 24
+            isAnimationStopped: false,
+            animationSpeed: 1
         };
+        var inverseSpeed = 1 / controlConfig.animationSpeed;
 
 
 
@@ -471,11 +472,12 @@
 
 
         //******************************* MENU ********************************
-        guic = new dat.GUI({ width: 350 });
-        var controlGUI = guic.addFolder("Controls");
-        controlGUI.add(controlConfig, 'freezState')
-        controlGUI.add(controlConfig, 'revolveSpeed', 1, 24).onChange(function () { });
-
+        guic = new dat.GUI({ width: 400, autoplace: false });
+        guic.domElement.id = 'menu';
+        const options = guic.addFolder("Opcje");
+        options.add(controlConfig, 'isAnimationStopped').name('Zatrzymaj/Wznów animację');
+        options.add(controlConfig, 'animationSpeed', -24, 24).onChange((value) => { inverseSpeed = 1/value; }).name('Szybkość animacji');
+        options.open();
 
 
         //****************************** WYBÓR PLANETY ************************
@@ -615,7 +617,7 @@
             requestAnimationFrame(animate);
             renderer.render(scene, camera);
 
-            if (!controlConfig.freezState)
+            if (!controlConfig.isAnimationStopped)
                 revolvePlanet();
         }
 
@@ -641,7 +643,7 @@
                 var radians = Math.acos(up.dot(tangent));
 
                 // aktualizacja danych do generowania kolejnej pozycji
-                mt = (mt >= 1) ? 0 : mt += (0.005 / controlConfig.revolveSpeed);
+                mt = (mt >= 1) ? 0 : mt += (0.005 / inverseSpeed);
             }
 
             if (venus) {
@@ -652,7 +654,7 @@
                 venusCollision.position.set(pt.x, pt.y-0.4, pt.z);
                 axis.crossVectors(up, tangent).normalize();
                 var radians = Math.acos(up.dot(tangent));
-                vet = (vet >= 1) ? 0 : vet += 0.001 / controlConfig.revolveSpeed;
+                vet = (vet >= 1) ? 0 : vet += 0.001 / inverseSpeed;
             }
 
             if (earth) {
@@ -663,7 +665,7 @@
                 earthCollision.position.set(pt.x, pt.y-0.45, pt.z);
                 axis.crossVectors(up, tangent).normalize();
                 var radians = Math.acos(up.dot(tangent));
-                eat = (eat >= 1) ? 0 : eat += 0.0003 / controlConfig.revolveSpeed;
+                eat = (eat >= 1) ? 0 : eat += 0.0003 / inverseSpeed;
             }
 
             if (mars) {
@@ -674,7 +676,7 @@
                 marsCollision.position.set(pt.x, pt.y-0.3, pt.z);
                 axis.crossVectors(up, tangent).normalize();
                 var radians = Math.acos(up.dot(tangent));
-                mat = (mat >= 1) ? 0 : mat += 0.0001 / controlConfig.revolveSpeed;
+                mat = (mat >= 1) ? 0 : mat += 0.0001 / inverseSpeed;
             }
 
             if (jupiter) {
@@ -685,7 +687,7 @@
                 jupiterCollision.position.set(pt.x, pt.y-1.9, pt.z);
                 axis.crossVectors(up, tangent).normalize();
                 var radians = Math.acos(up.dot(tangent));
-                jupt = (jupt >= 1) ? 0 : jupt += 0.00006 / controlConfig.revolveSpeed;
+                jupt = (jupt >= 1) ? 0 : jupt += 0.00006 / inverseSpeed;
             }
 
             if (saturn) {
@@ -696,7 +698,7 @@
                 saturnCollision.position.set(pt.x, pt.y-0.6, pt.z);
                 axis.crossVectors(up, tangent).normalize();
                 var radians = Math.acos(up.dot(tangent));
-                satt = (satt >= 1) ? 0 : satt += 0.00003 / controlConfig.revolveSpeed;
+                satt = (satt >= 1) ? 0 : satt += 0.00003 / inverseSpeed;
             }
 
             if (uranus) {
@@ -707,7 +709,7 @@
                 uranCollision.position.set(pt.x, pt.y-0.5, pt.z);
                 axis.crossVectors(up, tangent).normalize();
                 var radians = Math.acos(up.dot(tangent));
-                urat = (urat >= 1) ? 0 : urat += 0.000009 / controlConfig.revolveSpeed;
+                urat = (urat >= 1) ? 0 : urat += 0.000009 / inverseSpeed;
             }
 
             if (neptune) {
@@ -718,7 +720,7 @@
                 neptunCollision.position.set(pt.x, pt.y-0.3, pt.z);
                 axis.crossVectors(up, tangent).normalize();
                 var radians = Math.acos(up.dot(tangent));
-                nept = (nept >= 1) ? 0 : nept += 0.0000009 / controlConfig.revolveSpeed;
+                nept = (nept >= 1) ? 0 : nept += 0.0000009 / inverseSpeed;
             }
 
 
