@@ -642,7 +642,7 @@
             unsetAllCheckboxes();
             checkboxes[followedPlanet-1]?.setValue(true);
 
-            if(!followedPlanet){
+            if(followedPlanet === null){
                 planetInfo.hidden = true;
             }
 
@@ -805,6 +805,12 @@
 
            
             switch (followedPlanet) {
+                case SelectedPlanet.SUN:
+                    console.log('jesteme');
+                    title.innerHTML = "Słońce"; 
+                    
+                    content.innerHTML = planetDetails.get('sun'); 
+                    break;
                 case SelectedPlanet.MERCURY:
                     var { x, y, z } = mercpath.getPoint(mt);
                     camera.position.set(x + 13, y + 1, z + 15);
