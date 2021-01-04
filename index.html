@@ -78,9 +78,10 @@
         var stars = [];
         var guic, controlConfig = {
             isAnimationStopped: false,
-            animationSpeed: 1
+            animationSpeed: 0.05,
+            planetFocused: null
         };
-        var inverseSpeed = 1 / controlConfig.animationSpeed;
+        var inverseSpeed = 1 / (controlConfig.animationSpeed);
 
 
 
@@ -472,17 +473,56 @@
 
 
         //******************************* MENU ********************************
+        const checkboxesValues = {
+            "SUN": false,
+            "MERCURY": false,
+            "VENUS": false,
+            "EARTH": false,
+            "MARS": false,
+            "JUPITER": false,
+            "SATURN": false,
+            "URAN": false,
+            "NEPTUN":false
+        }
+
+        const checkboxes = [];
         guic = new dat.GUI({ width: 400, autoplace: false });
         guic.domElement.id = 'menu';
         const options = guic.addFolder("Opcje");
         options.add(controlConfig, 'isAnimationStopped').name('Zatrzymaj/Wznów animację');
-        options.add(controlConfig, 'animationSpeed', -24, 24).onChange((value) => { inverseSpeed = 1/value; }).name('Szybkość animacji');
-        options.open();
+        options.add(controlConfig, 'animationSpeed', 0, 2).onChange((value) => { inverseSpeed = 1/value; }).name('Szybkość animacji');
+        const planets = guic.addFolder("Planety");
+        checkboxes.push(planets.add(checkboxesValues, 'SUN').name('Słońce').listen().onChange(() => { setAsActive('SUN'); }));
+        checkboxes.push(planets.add(checkboxesValues, 'MERCURY').name('Merkury').listen().onChange(() => { setAsActive('MERCURY'); }));
+        checkboxes.push(planets.add(checkboxesValues, 'VENUS').name('Wenus').listen().onChange(() => { setAsActive('VENUS'); }));
+        checkboxes.push(planets.add(checkboxesValues, 'EARTH').name('Ziemia').listen().onChange(() => { setAsActive('EARTH'); }));
+        checkboxes.push(planets.add(checkboxesValues, 'MARS').name('Mars').listen().onChange(() => { setAsActive('MARS'); }));
+        checkboxes.push(planets.add(checkboxesValues, 'JUPITER').name('Jowisz').listen().onChange(() => { setAsActive('JUPITER'); }));
+        checkboxes.push(planets.add(checkboxesValues, 'SATURN').name('Saturn').listen().onChange(() => { setAsActive('SATURN'); }));
+        checkboxes.push(planets.add(checkboxesValues, 'URAN').name('Uran').listen().onChange(() => { setAsActive('URAN'); }));
+        checkboxes.push(planets.add(checkboxesValues, 'NEPTUN').name('Neptun').listen().onChange(() => { setAsActive('NEPTUN'); }));
 
+        options.open();
+        planets.open();
+
+        function setAsActive(planet) {
+            unsetAllCheckboxes();
+            checkboxesValues[planet] = true;
+            planetInfo.hidden = false;
+            title.innerHTML = planet.toLowerCase(); 
+            content.innerHTML = planetDetails.get(planet.toLowerCase()); 
+            checkPlanet = true;
+            followedPlanet = SelectedPlanet[planet];
+        }
+
+        function unsetAllCheckboxes() {
+            for (let checkbox in checkboxesValues) {
+                checkboxesValues[checkbox] = false;
+            }
+        }
 
         //****************************** WYBÓR PLANETY ************************
         function onDocumentClick(event) {
-            console.log("click")
             var checkPlanet = false;
             var rect = renderer.domElement.getBoundingClientRect();
             mouse.x = ((event.clientX - rect.left) / (rect.width - rect.left)) * 2 - 1;
@@ -573,9 +613,13 @@
                 checkPlanet = true;
             }
 
+            unsetAllCheckboxes();
+            checkboxes[followedPlanet]?.setValue(true);
+
             if(!checkPlanet){
                 planetInfo.hidden = true;
             }
+
         }
 
         function onWindowResize(event) {
@@ -732,6 +776,8 @@
                 scene.remove(directionalLight);
                 return;
             }
+
+            if (!followedPlanet) { unsetAllCheckboxes(); }
            
             switch (followedPlanet) {
                 case SelectedPlanet.MERCURY:
