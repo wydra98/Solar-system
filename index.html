@@ -492,7 +492,6 @@
         options.add(controlConfig, 'isAnimationStopped').name('Zatrzymaj/Wznów animację');
         options.add(controlConfig, 'animationSpeed', 0, 2).onChange((value) => { inverseSpeed = 1/value; }).name('Szybkość animacji');
         const planets = guic.addFolder("Planety");
-        checkboxes.push(planets.add(checkboxesValues, 'SUN').name('Słońce').listen().onChange(() => { setAsActive('SUN'); }));
         checkboxes.push(planets.add(checkboxesValues, 'MERCURY').name('Merkury').listen().onChange(() => { setAsActive('MERCURY'); }));
         checkboxes.push(planets.add(checkboxesValues, 'VENUS').name('Wenus').listen().onChange(() => { setAsActive('VENUS'); }));
         checkboxes.push(planets.add(checkboxesValues, 'EARTH').name('Ziemia').listen().onChange(() => { setAsActive('EARTH'); }));
@@ -506,13 +505,40 @@
         planets.open();
 
         function setAsActive(planet) {
+            console.log('siekjma ', planet);
+
+            followedPlanet = SelectedPlanet[planet];
             unsetAllCheckboxes();
             checkboxesValues[planet] = true;
             planetInfo.hidden = false;
-            title.innerHTML = planet.toLowerCase(); 
-            content.innerHTML = planetDetails.get(planet.toLowerCase()); 
-            checkPlanet = true;
-            followedPlanet = SelectedPlanet[planet];
+            content.innerHTML = planetDetails.get(planet.toLowerCase());
+            
+            switch (followedPlanet) {
+                case SelectedPlanet.MERCURY:
+                    title.innerHTML = 'Merkury';
+                    break;
+                case SelectedPlanet.VENUS:
+                    title.innerHTML = 'Wenus';
+                    break;
+                case SelectedPlanet.EARTH:
+                    title.innerHTML = 'Ziemia';
+                    break;
+                case SelectedPlanet.MARS:
+                    title.innerHTML = 'Mars';
+                    break;
+                case SelectedPlanet.JUPITER:
+                    title.innerHTML = 'Jowisz';
+                    break;
+                case SelectedPlanet.SATURN:
+                    title.innerHTML = 'Saturn';
+                    break;
+                case SelectedPlanet.URAN:
+                    title.innerHTML = 'Uran';
+                    break;
+                case SelectedPlanet.NEPTUN:
+                    title.innerHTML = 'Neptun';
+                    break;
+            }
         }
 
         function unsetAllCheckboxes() {
@@ -529,7 +555,7 @@
             mouse.y = - ((event.clientY - rect.top) / (rect.bottom - rect.top)) * 2 + 1;
             let intersects;
 
-
+            console.log('clik');
             intersects = raycaster.intersectObjects([sunCollision]);
             if (intersects.length > 0) {
                 followedPlanet = SelectedPlanet.SUN;
@@ -614,9 +640,9 @@
             }
 
             unsetAllCheckboxes();
-            checkboxes[followedPlanet]?.setValue(true);
+            checkboxes[followedPlanet-1]?.setValue(true);
 
-            if(!checkPlanet){
+            if(!followedPlanet){
                 planetInfo.hidden = true;
             }
 
@@ -771,13 +797,12 @@
 
             // ************ AKTUALIZACJA POZYCJI KAMERY I ŚWIATŁA PODCZAS WYBORU PLAMETY *************
             let p;
+            if (!followedPlanet) { unsetAllCheckboxes(); scene.remove(directionalLight); return;}
 
-            if (!followedPlanet || followedPlanet === SelectedPlanet.SUN) {
+            if (followedPlanet === SelectedPlanet.SUN) {
                 scene.remove(directionalLight);
-                return;
             }
 
-            if (!followedPlanet) { unsetAllCheckboxes(); }
            
             switch (followedPlanet) {
                 case SelectedPlanet.MERCURY:
